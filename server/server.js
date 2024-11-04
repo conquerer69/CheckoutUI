@@ -1,9 +1,9 @@
-const express = require('express');
+const express = require('express')
 const bodyParser = require('body-parser');
 const cors = require('cors');
 
-const app = express();
-const port = process.env.PORT || 3000;  // Ensure PORT is used
+const app = express()
+var port = process.env.PORT || 3000;
 
 let products = [];
 let orders = [];
@@ -52,7 +52,11 @@ app.delete('/product/:id', (req, res) => {
 
     // remove item from the products array
     products = products.filter(i => {
-        return i.id !== id;  // Simplified filter function
+        if (i.id !== id) {
+            return true;
+        }
+
+        return false;
     });
 
     // sending 404 when not found something is a good practice
@@ -64,23 +68,23 @@ app.post('/product/:id', (req, res) => {
     const id = req.params.id;
     const newProduct = req.body;
 
-    // find and update the product in the products array
+    // remove item from the products array
     for (let i = 0; i < products.length; i++) {
-        if (products[i].id === id) {
+        let product = products[i]
+
+        if (product.id === id) {
             products[i] = newProduct;
-            res.send('Product is edited');
-            return;  // Return to avoid sending multiple responses
         }
     }
 
     // sending 404 when not found something is a good practice
-    res.status(404).send('Product not found');
+    res.send('Product is edited');
 });
 
 app.post('/checkout', (req, res) => {
     const order = req.body;
 
-    // output the order to the console for debugging
+    // output the product to the console for debugging
     orders.push(order);
 
     res.redirect(302, 'https://assettracker.cf');
@@ -88,7 +92,7 @@ app.post('/checkout', (req, res) => {
 
 app.get('/checkout', (req, res) => {
     res.json(orders);
+
 });
 
-// Start the server
 app.listen(port, () => console.log(`Server listening on port ${port}!`));
