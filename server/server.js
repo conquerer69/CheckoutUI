@@ -1,14 +1,15 @@
-const express = require('express')
+const express = require('express');
 const bodyParser = require('body-parser');
 const cors = require('cors');
+const { v4: uuidv4 } = require('uuid'); // Import uuid for unique ID generation
 
-const app = express()
-var port = process.env.PORT || 3000;
+const app = express();
+const port = process.env.PORT || 3000;  // Ensure PORT is used
 
 let products = [];
 let orders = [];
-app.use(cors());
 
+app.use(cors());
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json());
 
@@ -16,83 +17,75 @@ app.get('/', (req, res) => {
     res.send("API deployment successful");
 });
 
+// Create a new product
 app.post('/product', (req, res) => {
-    const product = req.body;
+    const { name, price } = req.body; // Assume these are required fields
 
-    // output the product to the console for debugging
+    // Basic validation
+    if (!name || typeof price !== 'number') {
+        return res.status(400).send('Name and price are required and price must be a number');
+    }
+
+    const product = { id: uuidv4(), name, price }; // Assign a unique ID
     console.log(product);
     products.push(product);
 
-    res.send('Product is added to the database');
+    res.status(201).json(product); // Return the created product
 });
 
+// Get all products
 app.get('/product', (req, res) => {
     res.json(products);
 });
 
+// Get a single product by ID
 app.get('/product/:id', (req, res) => {
-    // reading id from the URL
     const id = req.params.id;
+    const product = products.find(p => p.id === id);
 
-    // searching products for the id
-    for (let product of products) {
-        if (product.id === id) {
-            res.json(product);
-            return;
-        }
+    if (product) {
+        res.json(product);
+    } else {
+        res.status(404).send('Product not found');
     }
-
-    // sending 404 when not found something is a good practice
-    res.status(404).send('Product not found');
 });
 
+// Delete a product by ID
 app.delete('/product/:id', (req, res) => {
-    // reading id from the URL
     const id = req.params.id;
+    products = products.filter(i => i.id !== id);
 
-    // remove item from the products array
-    products = products.filter(i => {
-        if (i.id !== id) {
-            return true;
-        }
-
-        return false;
-    });
-
-    // sending 404 when not found something is a good practice
     res.send('Product is deleted');
 });
 
+// Update a product by ID
 app.post('/product/:id', (req, res) => {
-    // reading id from the URL
     const id = req.params.id;
-    const newProduct = req.body;
+    const { name, price } = req.body;
 
-    // remove item from the products array
-    for (let i = 0; i < products.length; i++) {
-        let product = products[i]
-
-        if (product.id === id) {
-            products[i] = newProduct;
-        }
+    // Find the product to update
+    const productIndex = products.findIndex(p => p.id === id);
+    if (productIndex !== -1) {
+        products[productIndex] = { id, name, price };
+        res.send('Product is edited');
+    } else {
+        res.status(404).send('Product not found');
     }
-
-    // sending 404 when not found something is a good practice
-    res.send('Product is edited');
 });
 
+// Checkout (Add order)
 app.post('/checkout', (req, res) => {
     const order = req.body;
-
-    // output the product to the console for debugging
     orders.push(order);
 
+    // Redirect to a URL after processing the order
     res.redirect(302, 'https://assettracker.cf');
 });
 
+// Get all orders
 app.get('/checkout', (req, res) => {
     res.json(orders);
-
 });
 
+// Start the server
 app.listen(port, () => console.log(`Server listening on port ${port}!`));
